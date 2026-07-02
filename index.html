@@ -517,6 +517,10 @@ function spawnSparks(x, y, color, count, speed = 4) {
   }
 }
 
+function spawnRing(x, y, color, maxR, life) {
+  particles.push({ type: "ring", x, y, vx: 0, vy: 0, life, max: life, color, r: 6, maxR });
+}
+
 // ===== Fighter =====
 class Fighter {
   constructor(charIndex, playerIndex, isCPU) {
@@ -548,6 +552,7 @@ class Fighter {
     this.dropTimer = 0;
     this.cutJump = true;
     this.squash = 0;
+    this.flashTimer = 0;
     this.prevVy = 0;
     this.shieldHP = SHIELD_MAX;
     this.shielding = false;
@@ -593,6 +598,7 @@ class Fighter {
     if (this.invincible > 0) this.invincible--;
     if (this.dropTimer > 0) this.dropTimer--;
     if (this.squash > 0) this.squash--;
+    if (this.flashTimer > 0) this.flashTimer--;
     this.checkBlastZone();
     this.savePrev(input);
   }
@@ -834,6 +840,15 @@ class Fighter {
       attack: this.attackPose(),
     });
     ctx.restore();
+
+    if (this.flashTimer > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.55 * (this.flashTimer / 4);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.ellipse(this.cx, this.cy, this.w * 0.9, this.h * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
 
     // シールド(画面座標で重ねる)
     if (this.shielding) {
@@ -1557,6 +1572,9 @@ function applyHit(target, src, def) {
   SFX.play(def.baseKB >= 5 || def.dmg >= 9 ? "smash" : "hit");
   spawnSparks(target.cx, target.cy, "#fff", 10, 5);
   spawnSparks(target.cx, target.cy, src.char.color, 8, 4);
+  const heavy = def.baseKB >= 5 || def.dmg >= 9;
+  target.flashTimer = heavy ? 4 : 2;
+  spawnRing(target.cx, target.cy, heavy ? src.char.color : "#ffffff", heavy ? 64 : 34, heavy ? 16 : 10);
 }
 
 // ===== ゲーム状態 =====
@@ -1815,7 +1833,8 @@ function updateProjectiles() {
 function updateParticles() {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.vx *= 0.96; p.life--;
+    if (!p.type) { p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.vx *= 0.96; }
+    p.life--;
     if (p.life <= 0) particles.splice(i, 1);
   }
 }
@@ -1837,6 +1856,14 @@ function drawBattle() {
   }
   for (const f of game.fighters) f.draw();
   for (const p of particles) {
+    if (p.type === "ring") {
+      const t = 1 - p.life / p.max;
+      ctx.globalAlpha = Math.max(0, (1 - t) * 0.8);
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1 + 3 * (1 - t);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (p.maxR - p.r) * t, 0, Math.PI * 2); ctx.stroke();
+      continue;
+    }
     ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color;
     ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
   }
