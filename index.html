@@ -1967,10 +1967,15 @@ function drawMainArenaPlatform(p) {
   drawStoneTilePattern(x, y, w, topH);
   ctx.restore();
 
+  const pulse = 0.5 + 0.5 * Math.sin(frame * 0.05);
+  ctx.save();
+  ctx.shadowColor = "rgba(140,255,120,0.9)";
+  ctx.shadowBlur = 8 + pulse * 10;
   ctx.fillStyle = "#72d66c";
   roundRect(ctx, p.x, p.y, p.w, 7, 4);
   ctx.fill();
-  ctx.fillStyle = "rgba(200,255,160,0.55)";
+  ctx.restore();
+  ctx.fillStyle = "rgba(220,255,180," + (0.45 + pulse * 0.35).toFixed(3) + ")";
   roundRect(ctx, p.x + 16, p.y + 1, p.w - 32, 2, 2);
   ctx.fill();
 
@@ -1997,9 +2002,14 @@ function drawSoftArenaPlatform(p, i) {
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 
+  const pulse = 0.5 + 0.5 * Math.sin(frame * 0.05 + i * 1.7);
+  ctx.save();
+  ctx.shadowColor = "rgba(120,220,255,0.9)";
+  ctx.shadowBlur = 6 + pulse * 8;
   ctx.fillStyle = "#95dfff";
   roundRect(ctx, p.x, p.y, p.w, 6, 3);
   ctx.fill();
+  ctx.restore();
   ctx.fillStyle = "rgba(24,92,255,0.72)";
   roundRect(ctx, x + 34, y + h - 5, w - 68, 4, 2);
   ctx.fill();
