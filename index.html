@@ -225,6 +225,10 @@ const SFX = {
     return buf;
   },
   resume() { if (this.ctx && this.ctx.state === "suspended") this.ctx.resume(); },
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : 0.72;
+  },
   bus(kind) {
     if (kind === "music") return this.musicBus;
     if (kind === "ui") return this.uiBus;
@@ -302,27 +306,33 @@ const SFX = {
   play(name) {
     if (!this.ctx || this.muted) return;
     switch (name) {
-      case "jump":
-        this.tone(360, 0.13, "triangle", 0.18, 760, { attack: 0.004, release: 0.09, filter: 2600, pan: -0.08 });
+      case "jump": {
+        const s = SAMPLES.play("jump", { vol: 0.5, pan: -0.08 });
+        this.tone(360, 0.13, "triangle", s ? 0.09 : 0.18, 760, { attack: 0.004, release: 0.09, filter: 2600, pan: -0.08 });
         this.noise(0.06, 0.055, { freq: 2600, type: "bandpass" });
         break;
+      }
       case "djump":
         this.tone(520, 0.16, "triangle", 0.16, 1080, { attack: 0.003, release: 0.10, filter: 3200, pan: 0.10 });
         this.tone(780, 0.12, "sine", 0.07, 1280, { delay: 0.035, bus: "sfx", filter: 4200 });
         this.noise(0.09, 0.06, { freq: 3200, type: "bandpass" });
         break;
-      case "hit":
+      case "hit": {
         if (!this.canPlay("hit", 0.035)) break;
+        const s = SAMPLES.play("hit", { vol: 0.9 });
         this.thump(118, 0.16, 0.34, 58);
         this.noise(0.105, 0.24, { freq: 1400, type: "bandpass", q: 1.8, decay: 2.2 });
-        this.tone(620, 0.08, "square", 0.11, 360, { attack: 0.001, release: 0.05, filter: 2200 });
+        this.tone(620, 0.08, "square", s ? 0.055 : 0.11, 360, { attack: 0.001, release: 0.05, filter: 2200 });
         break;
-      case "smash":
+      }
+      case "smash": {
+        const s = SAMPLES.play("smash", { vol: 1.0 });
         this.thump(72, 0.34, 0.55, 34);
         this.noise(0.22, 0.38, { freq: 620, type: "bandpass", q: 1.1, decay: 2.8 });
         this.noise(0.10, 0.20, { freq: 4200, type: "highpass", delay: 0.025 });
-        this.tone(96, 0.30, "sawtooth", 0.24, 42, { attack: 0.002, release: 0.2, filter: 520 });
+        this.tone(96, 0.30, "sawtooth", s ? 0.12 : 0.24, 42, { attack: 0.002, release: 0.2, filter: 520 });
         break;
+      }
       case "shield":
         this.chord([240, 360, 540], 0.18, 0.10, "sfx");
         this.tone(900, 0.20, "sine", 0.08, 720, { filter: 2600 });
@@ -331,20 +341,26 @@ const SFX = {
         this.tone(260, 0.11, "sine", 0.22, 160, { attack: 0.001, release: 0.08, filter: 600 });
         this.noise(0.08, 0.16, { freq: 1800, type: "bandpass", q: 3 });
         break;
-      case "break":
+      case "break": {
+        const s = SAMPLES.play("break", { vol: 0.9 });
         this.thump(58, 0.45, 0.62, 24);
         this.noise(0.36, 0.45, { freq: 520, type: "bandpass", decay: 1.2 });
-        this.chord([190, 255, 340, 455], 0.38, 0.12, "sfx", 0.04);
+        this.chord([190, 255, 340, 455], 0.38, s ? 0.06 : 0.12, "sfx", 0.04);
         break;
-      case "ko":
+      }
+      case "ko": {
+        const s = SAMPLES.play("ko", { vol: 1.0 });
         this.thump(46, 0.58, 0.70, 22);
         this.noise(0.46, 0.50, { freq: 880, type: "bandpass", decay: 1.4 });
-        this.tone(740, 0.42, "sawtooth", 0.24, 96, { attack: 0.003, release: 0.28, filter: 1800 });
+        this.tone(740, 0.42, "sawtooth", s ? 0.12 : 0.24, 96, { attack: 0.003, release: 0.28, filter: 1800 });
         break;
-      case "select":
-        this.chord([523, 659, 988], 0.16, 0.105, "ui");
-        this.tone(1320, 0.08, "sine", 0.08, 1580, { bus: "ui", filter: 5200, delay: 0.03 });
+      }
+      case "select": {
+        const s = SAMPLES.play("select", { vol: 0.7, bus: "ui" });
+        this.chord([523, 659, 988], 0.16, s ? 0.05 : 0.105, "ui");
+        this.tone(1320, 0.08, "sine", s ? 0.04 : 0.08, 1580, { bus: "ui", filter: 5200, delay: 0.03 });
         break;
+      }
       case "move":
         this.tone(420, 0.055, "triangle", 0.09, 520, { bus: "ui", attack: 0.002, release: 0.03, filter: 3400 });
         break;
@@ -352,11 +368,13 @@ const SFX = {
         this.thump(96, 0.16, 0.34, 72);
         this.chord([440, 660], 0.13, 0.11, "ui", 0.015);
         break;
-      case "go":
+      case "go": {
+        const s = SAMPLES.play("go", { vol: 0.8, bus: "ui" });
         this.thump(64, 0.36, 0.54, 34);
-        this.chord([523, 784, 1046], 0.34, 0.18, "ui", 0.02);
+        this.chord([523, 784, 1046], 0.34, s ? 0.09 : 0.18, "ui", 0.02);
         this.noise(0.18, 0.18, { freq: 2800, type: "highpass", delay: 0.035 });
         break;
+      }
       case "win":
         [392, 523, 659, 784, 1046].forEach((f, i) => {
           this.tone(f, 0.28, "triangle", 0.16, null, { bus: "music", delay: i * 0.13, attack: 0.01, release: 0.18, filter: 4200, pan: (i - 2) * 0.15 });
@@ -386,16 +404,72 @@ const SFX = {
   },
 };
 
+// ===== サンプル音源(assets/audio)。未ロード時は合成音にフォールバック =====
+const SAMPLES = {
+  buffers: {}, loading: false, bgmSource: null, bgmActive: false,
+  manifest: {
+    jump: "assets/audio/se/jump.mp3",
+    hit: "assets/audio/se/hit.mp3",
+    smash: "assets/audio/se/smash.mp3",
+    break: "assets/audio/se/shieldbreak.mp3",
+    ko: "assets/audio/se/ko.mp3",
+    select: "assets/audio/se/select.mp3",
+    go: "assets/audio/se/go.mp3",
+    bgm_battle: "assets/audio/bgm/battle.mp3",
+  },
+  load() {
+    if (this.loading || !SFX.ctx || typeof fetch === "undefined") return;
+    this.loading = true;
+    for (const [name, url] of Object.entries(this.manifest)) {
+      fetch(url)
+        .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.arrayBuffer(); })
+        .then((ab) => SFX.ctx.decodeAudioData(ab))
+        .then((buf) => { this.buffers[name] = buf; })
+        .catch(() => {});
+    }
+  },
+  play(name, opts) {
+    const buf = this.buffers[name];
+    if (!buf || !SFX.ctx || SFX.muted) return false;
+    opts = opts || {};
+    const src = SFX.ctx.createBufferSource();
+    src.buffer = buf;
+    const g = SFX.ctx.createGain();
+    g.gain.value = opts.vol != null ? opts.vol : 1;
+    src.connect(g);
+    SFX.connectOut(g, opts.bus || "sfx", opts.pan || 0);
+    src.start();
+    return true;
+  },
+  startBgm() {
+    this.stopBgm();
+    const buf = this.buffers.bgm_battle;
+    if (!buf || !SFX.ctx) return;
+    const src = SFX.ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(SFX.musicBus);
+    src.start();
+    this.bgmSource = src;
+    this.bgmActive = true;
+  },
+  stopBgm() {
+    if (this.bgmSource) { try { this.bgmSource.stop(); } catch (_) {} }
+    this.bgmSource = null;
+    this.bgmActive = false;
+  },
+};
+
 // ===== 入力 =====
 const keys = new Set();
 const mouse = { x: 0, y: 0, clicked: false };
 
-function onFirstGesture() { SFX.init(); SFX.resume(); }
+function onFirstGesture() { SFX.init(); SFX.resume(); SAMPLES.load(); }
 if (typeof window !== "undefined") {
   window.addEventListener("keydown", (e) => {
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
     onFirstGesture();
-    if (e.code === "KeyM") SFX.muted = !SFX.muted;
+    if (e.code === "KeyM") SFX.setMuted(!SFX.muted);
     keys.add(e.code);
   });
   window.addEventListener("keyup", (e) => keys.delete(e.code));
@@ -443,6 +517,25 @@ function spawnSparks(x, y, color, count, speed = 4) {
   }
 }
 
+function spawnRing(x, y, color, maxR, life) {
+  particles.push({ type: "ring", x, y, vx: 0, vy: 0, life, max: life, color, r: 6, maxR });
+}
+
+function spawnLandingImpact(x, y, weight) {
+  const n = Math.round(6 + weight * 6);
+  for (let i = 0; i < n; i++) {
+    const dir = i % 2 === 0 ? 1 : -1;
+    particles.push({
+      x: x + dir * (4 + Math.random() * 10), y: y - 2,
+      vx: dir * (1.2 + Math.random() * 1.8) * weight, vy: -(0.5 + Math.random() * 1.2),
+      life: 14 + Math.random() * 10, max: 24, color: "#c8beaa", r: 2 + Math.random() * 3,
+    });
+  }
+  if (weight >= 1.2) {
+    particles.push({ type: "crack", x, y, vx: 0, vy: 0, life: 12, max: 12, color: "#282218", w: 30 + weight * 18 });
+  }
+}
+
 // ===== Fighter =====
 class Fighter {
   constructor(charIndex, playerIndex, isCPU) {
@@ -474,6 +567,7 @@ class Fighter {
     this.dropTimer = 0;
     this.cutJump = true;
     this.squash = 0;
+    this.flashTimer = 0;
     this.prevVy = 0;
     this.shieldHP = SHIELD_MAX;
     this.shielding = false;
@@ -519,6 +613,7 @@ class Fighter {
     if (this.invincible > 0) this.invincible--;
     if (this.dropTimer > 0) this.dropTimer--;
     if (this.squash > 0) this.squash--;
+    if (this.flashTimer > 0) this.flashTimer--;
     this.checkBlastZone();
     this.savePrev(input);
   }
@@ -645,7 +740,10 @@ class Fighter {
       const within = this.cx >= p.x && this.cx <= p.x + p.w;
       if (this.vy >= 0 && within && prevBottom <= p.y + 6 && bottom >= p.y) {
         this.y = p.y - this.h; this.vy = 0;
-        if (!this.onGround && this.prevVy > 6) this.squash = 8;
+        if (!this.onGround && this.prevVy > 6) {
+          this.squash = 8;
+          if (this.char.weight >= 1.0 && this.prevVy > 9) spawnLandingImpact(this.cx, p.y, this.char.weight);
+        }
         this.onGround = true; this.platform = p; this.airJumps = this.char.airJumps; this.cutJump = true;
       }
     }
@@ -760,6 +858,15 @@ class Fighter {
       attack: this.attackPose(),
     });
     ctx.restore();
+
+    if (this.flashTimer > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.55 * (this.flashTimer / 4);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.ellipse(this.cx, this.cy, this.w * 0.9, this.h * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
 
     // シールド(画面座標で重ねる)
     if (this.shielding) {
@@ -1483,6 +1590,9 @@ function applyHit(target, src, def) {
   SFX.play(def.baseKB >= 5 || def.dmg >= 9 ? "smash" : "hit");
   spawnSparks(target.cx, target.cy, "#fff", 10, 5);
   spawnSparks(target.cx, target.cy, src.char.color, 8, 4);
+  const heavy = def.baseKB >= 5 || def.dmg >= 9;
+  target.flashTimer = heavy ? 4 : 2;
+  spawnRing(target.cx, target.cy, heavy ? src.char.color : "#ffffff", heavy ? 64 : 34, heavy ? 16 : 10);
 }
 
 // ===== ゲーム状態 =====
@@ -1531,7 +1641,7 @@ function updateSelect() {
     else if (inRect(mouse, UI.diff)) { cycleDifficulty(); SFX.play("move"); }
     else if (inRect(mouse, UI.stock)) { cycleStocks(); SFX.play("move"); }
     else if (inRect(mouse, UI.reset)) { resetSel(); SFX.play("move"); }
-    else if (inRect(mouse, UI.mute)) { SFX.muted = !SFX.muted; if (!SFX.muted) SFX.play("select"); }
+    else if (inRect(mouse, UI.mute)) { SFX.setMuted(!SFX.muted); if (!SFX.muted) SFX.play("select"); }
     else if (inRect(mouse, UI.start) && ready) { startBattle(); }
     else {
       for (let i = 0; i < CHARACTERS.length; i++) if (inRect(mouse, cardRect(i))) { pickCharacter(i); SFX.play("select"); break; }
@@ -1741,7 +1851,8 @@ function updateProjectiles() {
 function updateParticles() {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.vx *= 0.96; p.life--;
+    if (!p.type) { p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.vx *= 0.96; }
+    p.life--;
     if (p.life <= 0) particles.splice(i, 1);
   }
 }
@@ -1763,6 +1874,26 @@ function drawBattle() {
   }
   for (const f of game.fighters) f.draw();
   for (const p of particles) {
+    if (p.type === "ring") {
+      const t = 1 - p.life / p.max;
+      ctx.globalAlpha = Math.max(0, (1 - t) * 0.8);
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1 + 3 * (1 - t);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (p.maxR - p.r) * t, 0, Math.PI * 2); ctx.stroke();
+      continue;
+    }
+    if (p.type === "crack") {
+      ctx.globalAlpha = Math.max(0, p.life / p.max) * 0.7;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x - p.w / 2, p.y);
+      ctx.lineTo(p.x - p.w * 0.2, p.y + 3);
+      ctx.lineTo(p.x + p.w * 0.15, p.y + 1);
+      ctx.lineTo(p.x + p.w / 2, p.y + 4);
+      ctx.stroke();
+      continue;
+    }
     ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color;
     ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
   }
@@ -1866,10 +1997,15 @@ function drawMainArenaPlatform(p) {
   drawStoneTilePattern(x, y, w, topH);
   ctx.restore();
 
+  const pulse = 0.5 + 0.5 * Math.sin(frame * 0.05);
+  ctx.save();
+  ctx.shadowColor = "rgba(140,255,120,0.9)";
+  ctx.shadowBlur = 8 + pulse * 10;
   ctx.fillStyle = "#72d66c";
   roundRect(ctx, p.x, p.y, p.w, 7, 4);
   ctx.fill();
-  ctx.fillStyle = "rgba(200,255,160,0.55)";
+  ctx.restore();
+  ctx.fillStyle = "rgba(220,255,180," + (0.45 + pulse * 0.35).toFixed(3) + ")";
   roundRect(ctx, p.x + 16, p.y + 1, p.w - 32, 2, 2);
   ctx.fill();
 
@@ -1896,9 +2032,14 @@ function drawSoftArenaPlatform(p, i) {
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 
+  const pulse = 0.5 + 0.5 * Math.sin(frame * 0.05 + i * 1.7);
+  ctx.save();
+  ctx.shadowColor = "rgba(120,220,255,0.9)";
+  ctx.shadowBlur = 6 + pulse * 8;
   ctx.fillStyle = "#95dfff";
   roundRect(ctx, p.x, p.y, p.w, 6, 3);
   ctx.fill();
+  ctx.restore();
   ctx.fillStyle = "rgba(24,92,255,0.72)";
   roundRect(ctx, x + 34, y + h - 5, w - 68, 4, 2);
   ctx.fill();
@@ -2313,7 +2454,10 @@ function loop(now) {
   if (acc > 0.2) acc = 0.2;
   while (acc >= STEP) {
     frame++;
-    if (frame % 24 === 0 && !(game.state === "battle" && game.paused)) SFX.bgmTick(game.state === "battle" ? "battle" : "menu");
+    if (game.state === "battle" && !SAMPLES.bgmActive && SAMPLES.buffers.bgm_battle && !SFX.muted) SAMPLES.startBgm();
+    if (game.state !== "battle" && SAMPLES.bgmActive) SAMPLES.stopBgm();
+    const sampleBgm = game.state === "battle" && SAMPLES.bgmActive;
+    if (frame % 24 === 0 && !(game.state === "battle" && game.paused) && !sampleBgm) SFX.bgmTick(game.state === "battle" ? "battle" : "menu");
     if (game.state === "select") updateSelect();
     else if (game.state === "battle") updateBattle();
     else if (game.state === "result") updateResult();
