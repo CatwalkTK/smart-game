@@ -521,6 +521,21 @@ function spawnRing(x, y, color, maxR, life) {
   particles.push({ type: "ring", x, y, vx: 0, vy: 0, life, max: life, color, r: 6, maxR });
 }
 
+function spawnLandingImpact(x, y, weight) {
+  const n = Math.round(6 + weight * 6);
+  for (let i = 0; i < n; i++) {
+    const dir = i % 2 === 0 ? 1 : -1;
+    particles.push({
+      x: x + dir * (4 + Math.random() * 10), y: y - 2,
+      vx: dir * (1.2 + Math.random() * 1.8) * weight, vy: -(0.5 + Math.random() * 1.2),
+      life: 14 + Math.random() * 10, max: 24, color: "#c8beaa", r: 2 + Math.random() * 3,
+    });
+  }
+  if (weight >= 1.2) {
+    particles.push({ type: "crack", x, y, vx: 0, vy: 0, life: 12, max: 12, color: "#282218", w: 30 + weight * 18 });
+  }
+}
+
 // ===== Fighter =====
 class Fighter {
   constructor(charIndex, playerIndex, isCPU) {
@@ -725,7 +740,10 @@ class Fighter {
       const within = this.cx >= p.x && this.cx <= p.x + p.w;
       if (this.vy >= 0 && within && prevBottom <= p.y + 6 && bottom >= p.y) {
         this.y = p.y - this.h; this.vy = 0;
-        if (!this.onGround && this.prevVy > 6) this.squash = 8;
+        if (!this.onGround && this.prevVy > 6) {
+          this.squash = 8;
+          if (this.char.weight >= 1.0 && this.prevVy > 9) spawnLandingImpact(this.cx, p.y, this.char.weight);
+        }
         this.onGround = true; this.platform = p; this.airJumps = this.char.airJumps; this.cutJump = true;
       }
     }
@@ -1862,6 +1880,18 @@ function drawBattle() {
       ctx.strokeStyle = p.color;
       ctx.lineWidth = 1 + 3 * (1 - t);
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (p.maxR - p.r) * t, 0, Math.PI * 2); ctx.stroke();
+      continue;
+    }
+    if (p.type === "crack") {
+      ctx.globalAlpha = Math.max(0, p.life / p.max) * 0.7;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x - p.w / 2, p.y);
+      ctx.lineTo(p.x - p.w * 0.2, p.y + 3);
+      ctx.lineTo(p.x + p.w * 0.15, p.y + 1);
+      ctx.lineTo(p.x + p.w / 2, p.y + 4);
+      ctx.stroke();
       continue;
     }
     ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color;
