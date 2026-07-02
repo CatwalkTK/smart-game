@@ -306,27 +306,33 @@ const SFX = {
   play(name) {
     if (!this.ctx || this.muted) return;
     switch (name) {
-      case "jump":
-        this.tone(360, 0.13, "triangle", 0.18, 760, { attack: 0.004, release: 0.09, filter: 2600, pan: -0.08 });
+      case "jump": {
+        const s = SAMPLES.play("jump", { vol: 0.5, pan: -0.08 });
+        this.tone(360, 0.13, "triangle", s ? 0.09 : 0.18, 760, { attack: 0.004, release: 0.09, filter: 2600, pan: -0.08 });
         this.noise(0.06, 0.055, { freq: 2600, type: "bandpass" });
         break;
+      }
       case "djump":
         this.tone(520, 0.16, "triangle", 0.16, 1080, { attack: 0.003, release: 0.10, filter: 3200, pan: 0.10 });
         this.tone(780, 0.12, "sine", 0.07, 1280, { delay: 0.035, bus: "sfx", filter: 4200 });
         this.noise(0.09, 0.06, { freq: 3200, type: "bandpass" });
         break;
-      case "hit":
+      case "hit": {
         if (!this.canPlay("hit", 0.035)) break;
+        const s = SAMPLES.play("hit", { vol: 0.9 });
         this.thump(118, 0.16, 0.34, 58);
         this.noise(0.105, 0.24, { freq: 1400, type: "bandpass", q: 1.8, decay: 2.2 });
-        this.tone(620, 0.08, "square", 0.11, 360, { attack: 0.001, release: 0.05, filter: 2200 });
+        this.tone(620, 0.08, "square", s ? 0.055 : 0.11, 360, { attack: 0.001, release: 0.05, filter: 2200 });
         break;
-      case "smash":
+      }
+      case "smash": {
+        const s = SAMPLES.play("smash", { vol: 1.0 });
         this.thump(72, 0.34, 0.55, 34);
         this.noise(0.22, 0.38, { freq: 620, type: "bandpass", q: 1.1, decay: 2.8 });
         this.noise(0.10, 0.20, { freq: 4200, type: "highpass", delay: 0.025 });
-        this.tone(96, 0.30, "sawtooth", 0.24, 42, { attack: 0.002, release: 0.2, filter: 520 });
+        this.tone(96, 0.30, "sawtooth", s ? 0.12 : 0.24, 42, { attack: 0.002, release: 0.2, filter: 520 });
         break;
+      }
       case "shield":
         this.chord([240, 360, 540], 0.18, 0.10, "sfx");
         this.tone(900, 0.20, "sine", 0.08, 720, { filter: 2600 });
@@ -335,20 +341,26 @@ const SFX = {
         this.tone(260, 0.11, "sine", 0.22, 160, { attack: 0.001, release: 0.08, filter: 600 });
         this.noise(0.08, 0.16, { freq: 1800, type: "bandpass", q: 3 });
         break;
-      case "break":
+      case "break": {
+        const s = SAMPLES.play("break", { vol: 0.9 });
         this.thump(58, 0.45, 0.62, 24);
         this.noise(0.36, 0.45, { freq: 520, type: "bandpass", decay: 1.2 });
-        this.chord([190, 255, 340, 455], 0.38, 0.12, "sfx", 0.04);
+        this.chord([190, 255, 340, 455], 0.38, s ? 0.06 : 0.12, "sfx", 0.04);
         break;
-      case "ko":
+      }
+      case "ko": {
+        const s = SAMPLES.play("ko", { vol: 1.0 });
         this.thump(46, 0.58, 0.70, 22);
         this.noise(0.46, 0.50, { freq: 880, type: "bandpass", decay: 1.4 });
-        this.tone(740, 0.42, "sawtooth", 0.24, 96, { attack: 0.003, release: 0.28, filter: 1800 });
+        this.tone(740, 0.42, "sawtooth", s ? 0.12 : 0.24, 96, { attack: 0.003, release: 0.28, filter: 1800 });
         break;
-      case "select":
-        this.chord([523, 659, 988], 0.16, 0.105, "ui");
-        this.tone(1320, 0.08, "sine", 0.08, 1580, { bus: "ui", filter: 5200, delay: 0.03 });
+      }
+      case "select": {
+        const s = SAMPLES.play("select", { vol: 0.7, bus: "ui" });
+        this.chord([523, 659, 988], 0.16, s ? 0.05 : 0.105, "ui");
+        this.tone(1320, 0.08, "sine", s ? 0.04 : 0.08, 1580, { bus: "ui", filter: 5200, delay: 0.03 });
         break;
+      }
       case "move":
         this.tone(420, 0.055, "triangle", 0.09, 520, { bus: "ui", attack: 0.002, release: 0.03, filter: 3400 });
         break;
@@ -356,11 +368,13 @@ const SFX = {
         this.thump(96, 0.16, 0.34, 72);
         this.chord([440, 660], 0.13, 0.11, "ui", 0.015);
         break;
-      case "go":
+      case "go": {
+        const s = SAMPLES.play("go", { vol: 0.8, bus: "ui" });
         this.thump(64, 0.36, 0.54, 34);
-        this.chord([523, 784, 1046], 0.34, 0.18, "ui", 0.02);
+        this.chord([523, 784, 1046], 0.34, s ? 0.09 : 0.18, "ui", 0.02);
         this.noise(0.18, 0.18, { freq: 2800, type: "highpass", delay: 0.035 });
         break;
+      }
       case "win":
         [392, 523, 659, 784, 1046].forEach((f, i) => {
           this.tone(f, 0.28, "triangle", 0.16, null, { bus: "music", delay: i * 0.13, attack: 0.01, release: 0.18, filter: 4200, pan: (i - 2) * 0.15 });
