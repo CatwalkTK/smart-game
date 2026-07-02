@@ -2387,7 +2387,10 @@ function loop(now) {
   if (acc > 0.2) acc = 0.2;
   while (acc >= STEP) {
     frame++;
-    if (frame % 24 === 0 && !(game.state === "battle" && game.paused)) SFX.bgmTick(game.state === "battle" ? "battle" : "menu");
+    if (game.state === "battle" && !SAMPLES.bgmActive && SAMPLES.buffers.bgm_battle && !SFX.muted) SAMPLES.startBgm();
+    if (game.state !== "battle" && SAMPLES.bgmActive) SAMPLES.stopBgm();
+    const sampleBgm = game.state === "battle" && SAMPLES.bgmActive;
+    if (frame % 24 === 0 && !(game.state === "battle" && game.paused) && !sampleBgm) SFX.bgmTick(game.state === "battle" ? "battle" : "menu");
     if (game.state === "select") updateSelect();
     else if (game.state === "battle") updateBattle();
     else if (game.state === "result") updateResult();
