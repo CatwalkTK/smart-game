@@ -225,6 +225,10 @@ const SFX = {
     return buf;
   },
   resume() { if (this.ctx && this.ctx.state === "suspended") this.ctx.resume(); },
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : 0.72;
+  },
   bus(kind) {
     if (kind === "music") return this.musicBus;
     if (kind === "ui") return this.uiBus;
@@ -386,16 +390,72 @@ const SFX = {
   },
 };
 
+// ===== サンプル音源(assets/audio)。未ロード時は合成音にフォールバック =====
+const SAMPLES = {
+  buffers: {}, loading: false, bgmSource: null, bgmActive: false,
+  manifest: {
+    jump: "assets/audio/se/jump.mp3",
+    hit: "assets/audio/se/hit.mp3",
+    smash: "assets/audio/se/smash.mp3",
+    break: "assets/audio/se/shieldbreak.mp3",
+    ko: "assets/audio/se/ko.mp3",
+    select: "assets/audio/se/select.mp3",
+    go: "assets/audio/se/go.mp3",
+    bgm_battle: "assets/audio/bgm/battle.mp3",
+  },
+  load() {
+    if (this.loading || !SFX.ctx || typeof fetch === "undefined") return;
+    this.loading = true;
+    for (const [name, url] of Object.entries(this.manifest)) {
+      fetch(url)
+        .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.arrayBuffer(); })
+        .then((ab) => SFX.ctx.decodeAudioData(ab))
+        .then((buf) => { this.buffers[name] = buf; })
+        .catch(() => {});
+    }
+  },
+  play(name, opts) {
+    const buf = this.buffers[name];
+    if (!buf || !SFX.ctx || SFX.muted) return false;
+    opts = opts || {};
+    const src = SFX.ctx.createBufferSource();
+    src.buffer = buf;
+    const g = SFX.ctx.createGain();
+    g.gain.value = opts.vol != null ? opts.vol : 1;
+    src.connect(g);
+    SFX.connectOut(g, opts.bus || "sfx", opts.pan || 0);
+    src.start();
+    return true;
+  },
+  startBgm() {
+    this.stopBgm();
+    const buf = this.buffers.bgm_battle;
+    if (!buf || !SFX.ctx) return;
+    const src = SFX.ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(SFX.musicBus);
+    src.start();
+    this.bgmSource = src;
+    this.bgmActive = true;
+  },
+  stopBgm() {
+    if (this.bgmSource) { try { this.bgmSource.stop(); } catch (_) {} }
+    this.bgmSource = null;
+    this.bgmActive = false;
+  },
+};
+
 // ===== 入力 =====
 const keys = new Set();
 const mouse = { x: 0, y: 0, clicked: false };
 
-function onFirstGesture() { SFX.init(); SFX.resume(); }
+function onFirstGesture() { SFX.init(); SFX.resume(); SAMPLES.load(); }
 if (typeof window !== "undefined") {
   window.addEventListener("keydown", (e) => {
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
     onFirstGesture();
-    if (e.code === "KeyM") SFX.muted = !SFX.muted;
+    if (e.code === "KeyM") SFX.setMuted(!SFX.muted);
     keys.add(e.code);
   });
   window.addEventListener("keyup", (e) => keys.delete(e.code));
@@ -1531,7 +1591,7 @@ function updateSelect() {
     else if (inRect(mouse, UI.diff)) { cycleDifficulty(); SFX.play("move"); }
     else if (inRect(mouse, UI.stock)) { cycleStocks(); SFX.play("move"); }
     else if (inRect(mouse, UI.reset)) { resetSel(); SFX.play("move"); }
-    else if (inRect(mouse, UI.mute)) { SFX.muted = !SFX.muted; if (!SFX.muted) SFX.play("select"); }
+    else if (inRect(mouse, UI.mute)) { SFX.setMuted(!SFX.muted); if (!SFX.muted) SFX.play("select"); }
     else if (inRect(mouse, UI.start) && ready) { startBattle(); }
     else {
       for (let i = 0; i < CHARACTERS.length; i++) if (inRect(mouse, cardRect(i))) { pickCharacter(i); SFX.play("select"); break; }
